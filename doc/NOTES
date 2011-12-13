@@ -17,12 +17,24 @@ blacklisted files post-chroot, but pre-RootRevoke?
 Check for blacklisted files on:
 
   chroot
+    + Only available in later proftpd versions.  Plus, the event data does
+      NOT contain the chroot path, unfortunately.  However, it looks like
+      session.chroot_path MIGHT already be set, prior to the chroot event.
+
   login
+    + POST/POST_ERR PASS, although this might be too late e.g. for the
+      "Roaring Beast" exploit.  Perhaps PRE USER?
+
   upload
+    + POST/POST_ERR STOR
+
   rename 
+    + POST/POST_ERR RNTO, SITE CPTO 
 
 How will mod_warden interact with e.g. quotas?  Anonymous logins?
 
 Make sure it works with SFTP/SCP connections as well.
 
-If path is a symlink, delete the link (but not the target file).
+If path is a symlink, delete the link (but not the target file).  What about
+blacklisted paths which are directories?
+
