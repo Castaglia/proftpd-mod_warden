@@ -1,0 +1,5 @@
+The mod_warden module for ProFTPD actively deletes blacklisted files for
+chrooted sessions (via DefaultRoot or via <Anonymous> logins).  This can
+help to mitigate some attacks, e.g. the "Roaring Beast" FreeBSD exploit.
+
+For further module documentation, see mod_warden.html.

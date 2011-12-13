@@ -1,0 +1,28 @@
+
+mod_warden
+
+Deletes blacklisted files (and globs?) at various times during the session.
+This can be used to mitigate attacks such as the "Roaring Beast" exploit
+by removing files which should not ever be present/used by sessions.
+
+  WardenEngine on|off
+  WardenBlacklist file1 file2 ... fileN
+  WardenLog
+
+How to enable the blacklist deletion only for chrooted sessions?
+Maybe mod_warden should (initially) only be in effect for chrooted sessions.
+What if the file can't be deleted by the user in question?  Delete the
+blacklisted files post-chroot, but pre-RootRevoke?
+
+Check for blacklisted files on:
+
+  chroot
+  login
+  upload
+  rename 
+
+How will mod_warden interact with e.g. quotas?  Anonymous logins?
+
+Make sure it works with SFTP/SCP connections as well.
+
+If path is a symlink, delete the link (but not the target file).
