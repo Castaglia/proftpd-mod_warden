@@ -67,6 +67,7 @@ MODRET set_wardenengine(cmd_rec *cmd) {
   c->argv[0] = pcalloc(c->pool, sizeof(int));
   *((int *) c->argv[0]) = bool;
 
+  warden_engine = bool;
   return PR_HANDLED(cmd);
 }
 
@@ -108,12 +109,22 @@ MODRET warden_post_cmd(cmd_rec *cmd) {
 
     pr_signals_handle();
 
+    pr_trace_msg(trace_channel, 9,
+      "%s: checking for blacklisted path '%s'", cmd->argv[0],
+      blacklisted_paths[i]);
+
+    pr_fs_clear_cache();
     res = pr_fsio_lstat(blacklisted_paths[i], &st);
     if (res < 0) {
       if (errno != ENOENT) {
         (void) pr_log_writefile(warden_logfd, MOD_WARDEN_VERSION,
           "unable to check blacklisted path '%s': %s", blacklisted_paths[i],
           strerror(errno));
+
+      } else {
+        pr_trace_msg(trace_channel, 18,
+          "%s: error checking blacklisted path '%s': %s", cmd->argv[0],
+          blacklisted_paths[i], strerror(errno));
       }
 
       continue;
@@ -133,6 +144,8 @@ MODRET warden_post_cmd(cmd_rec *cmd) {
         strerror(errno));
 
     } else {
+      (void) pr_log_writefile(warden_logfd, MOD_WARDEN_VERSION,
+        "deleted blacklisted file '%s'", blacklisted_paths[i]);
       pr_log_pri(PR_LOG_NOTICE, MOD_WARDEN_VERSION
         ": deleted blacklisted file '%s'", blacklisted_paths[i]);
     }
@@ -288,6 +301,8 @@ static void warden_postparse_ev(const void *event_data, void *user_data) {
       warden_blacklist = make_array(warden_pool, 4, sizeof(char **));
     }
 
+    pr_trace_msg(trace_channel, 4, "adding blacklisted path '%s' to the list",
+      cleaned_path);
     *((char **) push_array(warden_blacklist)) = pstrdup(warden_pool,
       cleaned_path);
   }
