@@ -38,3 +38,7 @@ Make sure it works with SFTP/SCP connections as well.
 If path is a symlink, delete the link (but not the target file).  What about
 blacklisted paths which are directories?
 
+New Features
+
+Support globs in the WardenBlacklist would be nice.  Doing so would require
+a directory scan, however.  Will see how important/requested this is.
