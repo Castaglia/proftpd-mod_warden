@@ -1,0 +1,171 @@
+<!-- $Id: mod_snmp.html,v 1.3 2011/10/19 17:16:52 tj Exp tj $ -->
+<!-- $Source: /home/tj/proftpd/modules/doc/RCS/mod_snmp.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_warden</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center>
+<h2><b>ProFTPD module <code>mod_warden</code></b></h2>
+</center>
+<hr><br>
+
+<p>
+The <code>mod_warden</code> module XXX
+
+<p>
+The <code>mod_warden</code> module is contained in the <code>mod_warden.c</code>
+file, is intended for ProFTPD 1.3.<i>x</i> and later, and is not compiled by
+default.  Installation instructions are discussed
+<a href="#Installation">here</a>.
+
+<p>
+The most current version of <code>mod_warden</code> can be found at:
+<pre>
+  <a href="http://www.castaglia.org/proftpd/">http://www.castaglia.org/proftpd/</a>
+</pre>
+
+<h2>Author</h2>
+<p>
+Please contact TJ Saunders &lt;tj <i>at</i> castaglia.org&gt; with any
+questions, concerns, or suggestions regarding this module.
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#WardenBlacklist">WardenBlacklist</a>
+  <li><a href="#WardenEngine">WardenEngine</a>
+  <li><a href="#WardenLog">WardenLog</a>
+</ul>
+
+<p>
+<hr>
+<h2><a name="WardenBlacklist">WardenBlacklist</a></h2>
+<strong>Syntax:</strong> WardenBlacklist <em>path/em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Module:</strong> mod_warden<br>
+<strong>Compatibility:</strong> 1.3.4rc3 and later
+
+<p>
+The <code>WardenBlacklist</code> directive configures XXX
+
+<p>
+<hr>
+<h2><a name="WardenEngine">WardenEngine</a></h2>
+<strong>Syntax:</strong> WardenEngine <em>on|off</em><br>
+<strong>Default:</strong> <em>off</em><br>
+<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Module:</strong> mod_warden<br>
+<strong>Compatibility:</strong> 1.3.4rc3 and later
+
+<p>
+The <code>WardenEngine</code> directive controls whether the
+<code>mod_warden</code> module checks for, and deletes, the blacklisted files.
+
+<p>
+<hr>
+<h2><a name="WardenLog">WardenLog</a></h2>
+<strong>Syntax:</strong> WardenLog <em>file|"none"</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Module:</strong> mod_warden<br>
+<strong>Compatibility:</strong> 1.3.4rc3 and later
+
+<p>
+The <code>WardenLog</code> directive is used to specify a log file for
+<code>mod_warden</code>'s reporting.  The <em>file</em> parameter given must be
+the full path to the file to use for logging.
+
+<p>
+Note that this path must <b>not</b> be to a world-writable directory and,
+unless <code>AllowLogSymlinks</code> is explicitly set to <em>on</em>
+(generally a bad idea), the path must <b>not</b> be a symbolic link.
+
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+To install <code>mod_warden</code>, follow the usual steps for using contrib
+modules in proftpd:
+<pre>
+  cp mod_warden.c <i>proftpd-dir</i>/contrib/
+</pre>
+after unpacking the latest proftpd-1.3.<i>x</i> source code.  For including
+<code>mod_warden</code> as a staticly linked module:
+<pre>
+  ./configure --with-modules=mod_warden ...
+</pre>
+Alternatively, <code>mod_warden</code> can be built as a DSO module:
+<pre>
+  ./configure --enable-dso --with-shared=mod_warden ...
+</pre>
+Then follow the usual steps:
+<pre>
+  make
+  make install
+</pre>
+
+<p>
+Alternatively, if your proftpd was compiled with DSO support, you can
+use the <code>prxs</code> tool to build <code>mod_warden</code> as a shared
+module:
+<pre>
+  prxs -c -i -d mod_warden.c
+</pre>
+
+<p>
+<hr>
+<h2><a name="Usage">Usage</a></h2>
+<p>
+
+<p>
+<hr>
+<h2><a name="Usage">Usage</a></h2>
+
+The configured <a href="#WardenBlacklist"><code>WardenBlacklist</code></a>
+is read in when <code>proftpd</code> starts up (and on SIGHUP/restart).
+
+Format of the file
+
+<p>
+<b>Example Configuration</b><br>
+Here is an example configuration for <code>mod_warden</code>:
+<pre>
+  &lt;IfModule mod_warden.c&gt;
+    WardenEngine on
+    WardenLog /var/log/proftpd/warden.log
+
+    # Configure the path to the blacklisted files
+    WardenBlacklist /etc/proftpd/warden.txt
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+<b>Suggested Future Features</b><br>
+The following lists the features I hope to add to <code>mod_warden</code>,
+according to need, demand, inclination, and time:
+<ul>
+  <li>Blacklisted paths using glob expressions
+</ul>
+
+<p>
+<hr><br>
+
+Author: <i>$Author: tj $</i><br>
+Last Updated: <i>$Date: 2011/10/19 17:16:52 $</i><br>
+
+<br><hr>
+
+<font size=2><b><i>
+&copy; Copyright 2011 TJ Saunders<br>
+ All Rights Reserved<br>
+</i></b></font>
+
+<hr><br>
+
+</body>
+</html>
+
