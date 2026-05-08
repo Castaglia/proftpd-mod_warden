@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_warden
- * Copyright (c) 2011 TJ Saunders
+ * Copyright (c) 2011-2026 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,8 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
@@ -52,22 +51,22 @@ MODRET set_wardenblacklist(cmd_rec *cmd) {
 
 /* usage: WardenEngine on|off */
 MODRET set_wardenengine(cmd_rec *cmd) {
-  int bool = 1;
+  int engine = 1;
   config_rec *c;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = engine;
 
-  warden_engine = bool;
+  warden_engine = engine;
   return PR_HANDLED(cmd);
 }
 
@@ -110,7 +109,7 @@ MODRET warden_post_cmd(cmd_rec *cmd) {
     pr_signals_handle();
 
     pr_trace_msg(trace_channel, 9,
-      "%s: checking for blacklisted path '%s'", cmd->argv[0],
+      "%s: checking for blacklisted path '%s'", (char *) cmd->argv[0],
       blacklisted_paths[i]);
 
     pr_fs_clear_cache();
@@ -123,7 +122,7 @@ MODRET warden_post_cmd(cmd_rec *cmd) {
 
       } else {
         pr_trace_msg(trace_channel, 18,
-          "%s: error checking blacklisted path '%s': %s", cmd->argv[0],
+          "%s: error checking blacklisted path '%s': %s", (char *) cmd->argv[0],
           blacklisted_paths[i], strerror(errno));
       }
 
@@ -159,20 +158,21 @@ MODRET warden_post_cmd(cmd_rec *cmd) {
 
 #if defined(PR_SHARED_MODULE)
 static void warden_mod_unload_ev(const void *event_data, void *user_data) {
-  if (strncmp((const char *) event_data, "mod_warden.c", 13) == 0) {
-
-    /* Unregister ourselves from all events. */
-    pr_event_unregister(&snmp_module, NULL, NULL);
-
-    destroy_pool(warden_pool);
-    warden_pool = NULL;
-    warden_blacklist = NULL;
-
-    (void) close(warden_logfd);
-    warden_logfd = -1;
+  if (strcmp((const char *) event_data, "mod_warden.c") != 0) {
+    return;
   }
+
+  /* Unregister ourselves from all events. */
+  pr_event_unregister(&warden_module, NULL, NULL);
+
+  destroy_pool(warden_pool);
+  warden_pool = NULL;
+  warden_blacklist = NULL;
+
+  (void) close(warden_logfd);
+  warden_logfd = -1;
 }
-#endif
+#endif /* PR_SHARED_MODULE */
 
 static void warden_postparse_ev(const void *event_data, void *user_data) {
   config_rec *c;
@@ -187,12 +187,12 @@ static void warden_postparse_ev(const void *event_data, void *user_data) {
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "WardenLog", FALSE);
-  if (c) {
+  if (c != NULL) {
     char *warden_logname;
 
     warden_logname = c->argv[0];
 
-    if (strncasecmp(warden_logname, "none", 5) != 0) {
+    if (strcasecmp(warden_logname, "none") != 0) {
       int xerrno;
 
       pr_signals_block();
@@ -247,6 +247,8 @@ static void warden_postparse_ev(const void *event_data, void *user_data) {
     pr_log_pri(PR_LOG_NOTICE, MOD_WARDEN_VERSION
       ": unable to read WardenBlacklist '%s': %s", blacklist_path,
       strerror(xerrno));
+
+    warden_engine = FALSE;
     return;
   }
 
@@ -281,7 +283,7 @@ static void warden_postparse_ev(const void *event_data, void *user_data) {
       buflen = strlen(buf);
     }
 
-    if (!have_eol) {
+    if (have_eol == FALSE) {
       (void) pr_log_writefile(warden_logfd, MOD_WARDEN_VERSION,
         "warning: handling possibly truncated blacklisted file at "
         "line %u of '%s'", lineno, blacklist_fh->fh_path);
@@ -331,7 +333,6 @@ static void warden_restart_ev(const void *event_data, void *user_data) {
 }
 
 static void warden_shutdown_ev(const void *event_data, void *user_data) {
-
   destroy_pool(warden_pool);
   warden_pool = NULL;
   warden_blacklist = NULL;
@@ -352,7 +353,7 @@ static int warden_init(void) {
 #if defined(PR_SHARED_MODULE)
   pr_event_register(&warden_module, "core.module-unload", warden_mod_unload_ev,
     NULL);
-#endif
+#endif /* PR_SHARED_MODULE */
   pr_event_register(&warden_module, "core.postparse", warden_postparse_ev,
     NULL);
   pr_event_register(&warden_module, "core.restart", warden_restart_ev, NULL);
@@ -365,7 +366,7 @@ static int warden_sess_init(void) {
   config_rec *c;
 
   c = find_config(main_server->conf, CONF_PARAM, "WardenEngine", FALSE);
-  if (c) {
+  if (c != NULL) {
     warden_engine = *((int *) c->argv[0]);
   }
 
@@ -419,4 +420,3 @@ module warden_module = {
   /* Module version */
   MOD_WARDEN_VERSION
 };
-
