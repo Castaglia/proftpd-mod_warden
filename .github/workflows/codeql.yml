@@ -1,0 +1,81 @@
+name: CodeQL
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - '**/doc/*'
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - '**/doc/*'
+  schedule:
+    - cron: "3 3 * * 3"
+
+jobs:
+  analyze:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    env:
+      # Let's try opting into use of Nodejs v24; see:
+      #  https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+      # GitHub runners still causing problems with NodeJS v20; see:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    strategy:
+      fail-fast: true
+      matrix:
+        language:
+          - cpp
+
+    steps:
+      - name: Checkout ProFTPD
+        uses: actions/checkout@v6
+        with:
+          repository: proftpd/proftpd
+
+      - name: Checkout mod_warden
+        uses: actions/checkout@v6
+        with:
+          path: proftpd-mod_warden
+
+      - name: Install Packages
+        run: |
+          sudo apt-get update
+
+      - name: Prepare module
+        run: |
+          cp proftpd-mod_warden/mod_warden.c contrib/mod_warden.c
+
+      - name: Configure
+        run: |
+          ./configure --with-modules=mod_warden
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          config-file: proftpd-mod_warden/.codeql.yml
+          queries: +security-and-quality
+          source-root: proftpd-mod_warden
+
+      - name: Build
+        run: |
+          make
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
+          checkout_path: proftpd-mod_warden
+          output: sarif-results
+          upload: true
